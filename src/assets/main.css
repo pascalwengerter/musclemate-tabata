@@ -1,3 +1,5 @@
+@import '../assets/stylesheets/bootstrap.min.css';
+
 html,
 body {
   height: 100%;
@@ -8,7 +10,7 @@ body {
 body {
   background-color: #1c1c1c;
   /* Background picture by/from https://unsplash.com/@victorfreitas */
-  background-image: url("../images/background-img.jpg");
+  background-image: url('../background-img.jpg');
   background-position: top center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -49,6 +51,7 @@ footer {
   position: fixed;
   bottom: 0;
   width: 100%;
+  left: 0;
   z-index: 3;
 }
 
@@ -58,4 +61,11 @@ footer p a {
 
 footer p a:hover {
   color: darken(var(--bs-red), 30%);
+}
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
 }
