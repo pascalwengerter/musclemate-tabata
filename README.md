@@ -1,21 +1,25 @@
 # Musclemate Tabata App
 
-## Development
+## Project Setup
 
-### Frontend
-
-The frontend uses pnpm and vite. Initially, run `pnpm install`, for development run `pnpm dev` and for the final bundle `pnpm build`.
-
-### Backend
-
-```bash
-$ docker build -t tabata-app .
-$ docker run -p 5000:4567 tabata-app
+```sh
+pnpm install
 ```
 
-or combined
+### Compile and Hot-Reload for Development
 
-```bash
-$ docker build -t tabata-app . && docker run -p 5000:4567 tabata-app
+```sh
+pnpm dev
 ```
-and visit [localhost:5000](http://localhost:5000)
+
+### Type-Check, Compile and Minify for Production
+
+```sh
+pnpm build
+```
+
+### Format & Lint
+
+```sh
+pnpm format && pnpm lint
+```
