@@ -1,22 +1,36 @@
 <template>
   <div>
     <div v-if="state === 'done'" class="flex flex-col items-center justify-center h-full">
-      <CheckBadgeIcon class="w-16 h-16" />
+      <CheckBadgeIcon class="w-16 h-16 text-green-600" />
       <p class="text-green-600 text-center mb-4">
         {{ buttonText }}
       </p>
       <button
-        class="cursor-pointer border border-rose-400 text-rose-400 px-4 py-2 rounded-md hover:border-rose-500 hover:text-rose-500"
+        class="cursor-pointer inline-flex items-center border border-rose-400 text-rose-400 px-4 py-2 rounded-md hover:border-rose-500 hover:text-rose-500"
         type="button"
         @click="resetAll"
       >
+        <ArrowPathIcon class="w-4 h-4 mr-2" />
         Go again
       </button>
     </div>
-    <div v-else-if="state === 'processing'">
-      <CogIcon class="animate-spin w-16 h-16" />
-      <p>
+    <div
+      v-else-if="state === 'processing'"
+      class="flex flex-col items-center justify-center h-full"
+    >
+      <CogIcon class="animate-spin w-16 h-16 text-rose-400 mb-4" />
+      <p class="text-center text-gray-700">
         {{ buttonText }}
+      </p>
+      <p class="text-sm text-gray-500 mt-2">This may take a moment...</p>
+    </div>
+    <div v-else-if="state === 'error'" class="flex flex-col items-center justify-center h-full">
+      <ExclamationTriangleIcon class="w-16 h-16 text-red-500 mb-4" />
+      <p class="text-red-600 text-center mb-4">
+        {{ buttonText }}
+      </p>
+      <p class="text-sm text-gray-500 text-center">
+        Please try again. The error will reset automatically in a few seconds.
       </p>
     </div>
     <div v-else>
@@ -33,7 +47,12 @@
 </template>
 
 <script lang="ts" setup>
-import { CheckBadgeIcon, CogIcon } from '@heroicons/vue/16/solid'
+import {
+  CheckBadgeIcon,
+  CogIcon,
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/vue/16/solid'
 import { storeToRefs } from 'pinia'
 import { computed, ref, unref, watch } from 'vue'
 import { createTrack } from '@/utils'
@@ -48,9 +67,13 @@ const { activeFile, restFile, activeTimestamps, restTimestamps } = storeToRefs(e
 const state = ref<State>('disabled')
 
 watch([activeFile, restFile], ([newActiveFile, newRestFile]) => {
-  if (newActiveFile && newRestFile && state.value === 'disabled') {
+  if (newActiveFile && newRestFile && state.value !== 'processing' && state.value !== 'done') {
     state.value = 'enabled'
-  } else if ((!newActiveFile || !newRestFile) && state.value === 'enabled') {
+  } else if (
+    (!newActiveFile || !newRestFile) &&
+    state.value !== 'processing' &&
+    state.value !== 'done'
+  ) {
     state.value = 'disabled'
   }
 })
@@ -107,4 +130,15 @@ const resetAll = () => {
   editor.reset()
   state.value = 'disabled'
 }
+
+// Reset error state after some time
+watch(state, (newState) => {
+  if (newState === 'error') {
+    setTimeout(() => {
+      if (state.value === 'error') {
+        state.value = activeFile.value && restFile.value ? 'enabled' : 'disabled'
+      }
+    }, 5000)
+  }
+})
 </script>
