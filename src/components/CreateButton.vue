@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div v-if="state === 'done'" class="flex flex-col items-center justify-center h-full">
+    <div
+      v-if="state === 'done'"
+      class="flex flex-col items-center justify-center py-4 min-h-[140px]"
+    >
       <CheckBadgeIcon class="w-16 h-16 text-green-600" />
       <p class="text-green-600 text-center mb-4">
         {{ buttonText }}
@@ -16,24 +19,36 @@
     </div>
     <div
       v-else-if="state === 'processing'"
-      class="flex flex-col items-center justify-center h-full"
+      class="flex flex-col items-center justify-center py-4 min-h-[140px]"
     >
       <CogIcon class="animate-spin w-16 h-16 text-rose-400 mb-4" />
-      <p class="text-center text-gray-700">
-        {{ buttonText }}
-      </p>
-      <p class="text-sm text-gray-500 mt-2">This may take a moment...</p>
+      <div class="w-full max-w-xs">
+        <p class="text-center text-gray-700 mb-3 min-h-[1.5rem]">
+          {{ buttonText }}
+        </p>
+        <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+          <div
+            class="bg-rose-400 h-2 rounded-full transition-all duration-300 ease-out"
+            :style="{ width: `${progressPercent}%` }"
+          ></div>
+        </div>
+        <p class="text-xs text-gray-500 text-center">{{ progressPercent }}% complete</p>
+      </div>
     </div>
-    <div v-else-if="state === 'error'" class="flex flex-col items-center justify-center h-full">
+    <div
+      v-else-if="state === 'error'"
+      class="flex flex-col items-center justify-center py-4 min-h-[140px]"
+    >
       <ExclamationTriangleIcon class="w-16 h-16 text-red-500 mb-4" />
-      <p class="text-red-600 text-center mb-4">
-        {{ buttonText }}
+      <p class="text-red-600 text-center mb-2 font-semibold">Processing Failed</p>
+      <p class="text-sm text-gray-700 text-center mb-4 max-w-sm">
+        {{ errorMessage }}
       </p>
-      <p class="text-sm text-gray-500 text-center">
-        Please try again. The error will reset automatically in a few seconds.
+      <p class="text-xs text-gray-500 text-center">
+        The error will reset automatically in a few seconds.
       </p>
     </div>
-    <div v-else>
+    <div v-else class="flex flex-col items-center justify-center py-4 min-h-[140px]">
       <button
         :disabled="isDisabled"
         type="button"
@@ -55,7 +70,7 @@ import {
 } from '@heroicons/vue/16/solid'
 import { storeToRefs } from 'pinia'
 import { computed, ref, unref, watch } from 'vue'
-import { createTrack } from '@/utils'
+import { createTrack, AudioProcessingError } from '@/utils'
 import { useEditorStore } from '@/stores'
 
 type State = 'disabled' | 'enabled' | 'processing' | 'error' | 'done'
@@ -65,6 +80,9 @@ const editor = useEditorStore()
 const { activeFile, restFile, activeTimestamps, restTimestamps } = storeToRefs(editor)
 
 const state = ref<State>('disabled')
+const progressText = ref('')
+const progressPercent = ref(0)
+const errorMessage = ref('')
 
 watch([activeFile, restFile], ([newActiveFile, newRestFile]) => {
   if (newActiveFile && newRestFile && state.value !== 'processing' && state.value !== 'done') {
@@ -91,7 +109,7 @@ const buttonText = computed(() => {
     case 'disabled':
       return 'Choose Files'
     case 'processing':
-      return 'Processing...'
+      return progressText.value || 'Processing...'
     case 'error':
       return 'Error Occurred'
     case 'done':
@@ -110,6 +128,9 @@ const startCreating = async () => {
   }
 
   state.value = 'processing'
+  progressText.value = 'Starting...'
+  progressPercent.value = 0
+  errorMessage.value = ''
 
   try {
     await createTrack({
@@ -117,18 +138,33 @@ const startCreating = async () => {
       file2,
       activeInterval: unref(activeTimestamps),
       restInterval: unref(restTimestamps),
+      onProgress: (step: string, progress: number) => {
+        progressText.value = step
+        progressPercent.value = progress
+      },
     })
 
     state.value = 'done'
+    progressText.value = 'Complete!'
+    progressPercent.value = 100
   } catch (error) {
     console.error('Error creating track:', error)
     state.value = 'error'
+
+    if (error instanceof AudioProcessingError) {
+      errorMessage.value = error.message
+    } else {
+      errorMessage.value = 'An unexpected error occurred. Please try again.'
+    }
   }
 }
 
 const resetAll = () => {
   editor.reset()
   state.value = 'disabled'
+  progressText.value = ''
+  progressPercent.value = 0
+  errorMessage.value = ''
 }
 
 // Reset error state after some time

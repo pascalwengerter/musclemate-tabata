@@ -74,10 +74,12 @@
         </div>
       </div>
       <div
-        class="flex flex-col gap-3 justify-center border border-dotted rounded-lg p-4 sm:p-8 lg:min-w-[280px]"
+        class="flex flex-col gap-3 justify-center border border-dotted rounded-lg p-4 sm:p-8 lg:min-w-[280px] min-h-[200px]"
       >
         <h3 class="text-lg font-semibold text-gray-700 text-center mb-2">Create Track</h3>
-        <CreateButton />
+        <div class="flex-1 flex items-center justify-center">
+          <CreateButton />
+        </div>
       </div>
     </div>
   </div>
@@ -86,6 +88,7 @@
 <script lang="ts" setup>
 import { useEditorStore } from '@/stores'
 import { storeToRefs } from 'pinia'
+import { validateAudioFile } from '@/utils'
 import CreateButton from './CreateButton.vue'
 import WaveformPlayer from './WaveformPlayer.vue'
 
@@ -95,10 +98,11 @@ const { activeFile, restFile, isRunning } = storeToRefs(editor)
 function onActiveFileChange(event: Event) {
   const file = (event.target as HTMLInputElement)?.files?.[0]
   if (file) {
-    if (isValidAudioFile(file)) {
+    const validation = validateAudioFile(file)
+    if (validation.isValid) {
       editor.setActiveFile(file)
     } else {
-      alert('Please select a valid audio file (MP3, WAV, AAC, OGG, M4A)')
+      alert(validation.error)
       // Reset the input
       ;(event.target as HTMLInputElement).value = ''
     }
@@ -108,40 +112,15 @@ function onActiveFileChange(event: Event) {
 function onRestFileChange(event: Event) {
   const file = (event.target as HTMLInputElement)?.files?.[0]
   if (file) {
-    if (isValidAudioFile(file)) {
+    const validation = validateAudioFile(file)
+    if (validation.isValid) {
       editor.setRestFile(file)
     } else {
-      alert('Please select a valid audio file (MP3, WAV, AAC, OGG, M4A)')
+      alert(validation.error)
       // Reset the input
       ;(event.target as HTMLInputElement).value = ''
     }
   }
-}
-
-function isValidAudioFile(file: File): boolean {
-  const validTypes = [
-    'audio/mpeg',
-    'audio/mp3',
-    'audio/wav',
-    'audio/wave',
-    'audio/x-wav',
-    'audio/aac',
-    'audio/ogg',
-    'audio/mp4',
-    'audio/m4a',
-    'audio/x-m4a',
-  ]
-
-  const validExtensions = ['.mp3', '.wav', '.aac', '.ogg', '.m4a']
-
-  // Check MIME type
-  if (validTypes.includes(file.type)) {
-    return true
-  }
-
-  // Fallback: check file extension
-  const fileName = file.name.toLowerCase()
-  return validExtensions.some((ext) => fileName.endsWith(ext))
 }
 
 function handleActiveRegionChange({ start, end }: { start: number; end: number }) {
