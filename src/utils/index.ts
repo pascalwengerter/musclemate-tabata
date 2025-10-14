@@ -168,7 +168,10 @@ export async function createTrack({
     const data = await ffmpeg.readFile('output.mp3')
 
     if (data instanceof Uint8Array) {
-      const blob = new Blob([data], { type: 'audio/mpeg' })
+      const arrayBuffer = new ArrayBuffer(data.byteLength)
+      const view = new Uint8Array(arrayBuffer)
+      view.set(data)
+      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' })
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
       a.download = 'tabata-track.mp3'
